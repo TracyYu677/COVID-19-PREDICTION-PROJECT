@@ -1,0 +1,12 @@
+name: final_plot_app
+title: final_plot_app
+username: jxygan
+account: jxygan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13625633
+bundleId: 9562364
+url: https://jxygan.shinyapps.io/final_plot_app/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
