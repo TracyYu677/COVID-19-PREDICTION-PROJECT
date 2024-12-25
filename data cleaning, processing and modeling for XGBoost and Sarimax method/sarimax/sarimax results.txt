@@ -1,0 +1,10 @@
+C:\Users\haoyu\AppData\Local\Programs\Python\Python313\Lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+Metrics on Training Data:
+{'Mean Absolute Error (MAE)': np.float64(19875.309261785642), 'Root Mean Squared Error (RMSE)': np.float64(47960.804360673785), 'Mean Absolute Percentage Error (MAPE)': np.float64(inf), 'R-Squared (R2)': 0.8788884586216319, 'Normalized R2': 0.8788884586216319, 'F1 Score': np.float64(0.9455128205128205)}
+C:\Users\haoyu\AppData\Local\Programs\Python\Python313\Lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+Metrics on Full Testing Data: {'Mean Absolute Error (MAE)': np.float64(35593.31126893882), 'Root Mean Squared Error (RMSE)': np.float64(43057.81498247143), 'Mean Absolute Percentage Error (MAPE)': np.float64(233.75662788604618), 'R-Squared (R2)': 0.006364513379461423, 'F1 Score': np.float64(0.75)}
+C:\Users\haoyu\AppData\Local\Programs\Python\Python313\Lib\site-packages\sklearn\metrics\_regression.py:492: FutureWarning: 'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+  warnings.warn(
+Metrics for Sep-Oct 2022: {'Mean Absolute Error (MAE)': np.float64(32396.04193394592), 'Root Mean Squared Error (RMSE)': np.float64(39008.01575352829), 'Mean Absolute Percentage Error (MAPE)': np.float64(151.7767898369961), 'R-Squared (R2)': -0.14081369416093104, 'Normalized R2': -0.14081369416093104, 'F1 Score': np.float64(0.782608695652174)}
