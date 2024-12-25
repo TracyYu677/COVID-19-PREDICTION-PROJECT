@@ -1,0 +1,153 @@
+---
+title: "the interactive spatial plots of Spatial-Gaussian model"
+author: "Xieqing Yu"
+date: "2024-12-23"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
+
+To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
+
+## Inputs and Outputs
+
+You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. The `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
+
+```{r}
+library(shiny)
+library(leaflet)
+library(sf)
+library(dplyr)
+library(lubridate)
+
+# Load shapefile
+california_counties <- st_read("/Users/xieqingyu/Desktop/ca_counties/rsconnect/shinyapps.io/tracyyu2024/CA_Counties.shp") %>%
+  rename(county = NAME) %>%  # Rename NAME to county
+  st_transform(crs = 4326)   # Ensurede CRS is WGS 84 for leaflet
+
+# Load dataset
+data <- read.csv("/Users/xieqingyu/Desktop/ca_counties/rsconnect/shinyapps.io/tracyyu2024/updated_dataset_with_predictions.csv")
+
+# Ensure date columns are in Date format
+data$date <- as.Date(data$date, format = "%Y-%m-%d")
+data$prediction_date <- as.Date(data$prediction_date, format = "%Y-%m-%d")
+
+# Define UI
+ui <- fluidPage(
+  titlePanel("Spatial-temporal Gaussian Regression Model"),
+  sidebarLayout(
+    sidebarPanel(
+     sliderInput(
+  "selected_date",
+  "Select Date:",
+  min = min(c(data$date, data$prediction_date), na.rm = TRUE),
+  max = max(c(data$date, data$prediction_date), na.rm = TRUE),
+  value = min(data$date, na.rm = TRUE),
+  timeFormat = "%Y-%m-%d",
+  step = 1
+    )
+    ),
+    mainPanel(
+      leafletOutput("true_cases_map"),
+      leafletOutput("predicted_cases_map")
+    )
+  )
+)
+
+# Define Server
+server <- function(input, output) {
+  # Ensure column names are lowercase
+  california_counties <- california_counties %>% rename_all(tolower)
+  data <- data %>% rename_all(tolower)
+
+  # Ensure county columns are character
+  california_counties$county <- as.character(california_counties$county)
+  data$county <- as.character(data$county)
+
+  # Remove rows with missing county or numeric values
+  california_counties <- california_counties %>% filter(!is.na(county))
+  data <- data %>%
+    filter(!is.na(county) & !is.na(daily_change_per_100k) & !is.na(predicted_daily_change_per_100k))
+
+  # Filter data based on the selected date
+  filtered_data <- reactive({
+    data %>%
+      filter(date == input$selected_date | prediction_date == input$selected_date)
+  })
+
+  # Merge filtered data with county shapefile for true cases
+  merged_true <- reactive({
+    california_counties %>%
+      left_join(
+        filtered_data() %>%
+          filter(date == input$selected_date),
+        by = "county"
+      )
+  })
+
+  # Merge filtered data with county shapefile for predicted cases
+  merged_predicted <- reactive({
+    california_counties %>%
+      left_join(
+        filtered_data() %>%
+          filter(prediction_date == input$selected_date),
+        by = "county"
+      )
+  })
+
+  # Render true cases map
+  output$true_cases_map <- renderLeaflet({
+    true_data <- merged_true()
+    if (nrow(true_data) == 0 || all(is.na(true_data$daily_change_per_100k))) {
+      return(NULL)  # Do not render if no valid data
+    }
+    leaflet(true_data) %>%
+      addTiles() %>%
+      addPolygons(
+        fillColor = ~colorNumeric("YlOrRd", daily_change_per_100k, na.color = "transparent")(daily_change_per_100k),
+        color = "black",
+        weight = 1,
+        fillOpacity = 0.7,
+        label = ~paste0(county, ": ", round(daily_change_per_100k, 2), " per 100k")
+      ) %>%
+      addLegend(
+        pal = colorNumeric("YlOrRd", range(true_data$daily_change_per_100k, na.rm = TRUE), na.color = "transparent"),
+        values = true_data$daily_change_per_100k,
+        title = "True Daily Cases per 100k",
+        position = "bottomright"
+      )
+  })
+
+  # Render predicted cases map
+  output$predicted_cases_map <- renderLeaflet({
+    predicted_data <- merged_predicted()
+    if (nrow(predicted_data) == 0 || all(is.na(predicted_data$predicted_daily_change_per_100k))) {
+      return(NULL)  # Do not render if no valid data
+    }
+    leaflet(predicted_data) %>%
+      addTiles() %>%
+      addPolygons(
+        fillColor = ~colorNumeric("YlOrRd", predicted_daily_change_per_100k, na.color = "transparent")(predicted_daily_change_per_100k),
+        color = "black",
+        weight = 1,
+        fillOpacity = 0.7,
+        label = ~paste0(county, ": ", round(predicted_daily_change_per_100k, 2), " per 100k")
+      ) %>%
+      addLegend(
+        pal = colorNumeric("YlOrRd", range(predicted_data$predicted_daily_change_per_100k, na.rm = TRUE), na.color = "transparent"),
+        values = predicted_data$predicted_daily_change_per_100k,
+        title = "Predicted Daily Cases per 100k",
+        position = "bottomright"
+      )
+  })
+}
+
+shinyApp(ui, server)
+
+
+```

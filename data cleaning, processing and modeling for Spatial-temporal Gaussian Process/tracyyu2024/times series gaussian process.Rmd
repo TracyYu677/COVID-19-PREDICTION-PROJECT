@@ -1,0 +1,90 @@
+---
+title: "times series gaussian process"
+author: "Xieqing Yu"
+date: "2024-12-23"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r eruptions, echo=FALSE}
+library(shiny)
+library(ggplot2)
+library(dplyr)
+
+# Load dataset
+# Replace 'updated_dataset_with_predictions.csv' with the path to your dataset
+data <- read.csv("/Users/xieqingyu/Desktop/ca_counties/rsconnect/shinyapps.io/tracyyu2024/updated_dataset_with_predictions.csv")
+
+# Ensure date columns are in Date format
+data$date <- as.Date(data$date, format="%Y-%m-%d")
+data$prediction_date <- as.Date(data$prediction_date, format="%Y-%m-%d")
+
+# Filter out rows with NA values in the relevant columns
+data <- data %>%
+  filter(!is.na(daily_change_per_100k) & !is.na(predicted_daily_change_per_100k))
+
+# Define UI
+ui <- fluidPage(
+  titlePanel("California County Time Series Viewer"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        "selected_county",
+        "Select a County:",
+        choices = unique(data$county),
+        selected = unique(data$county)[1]
+      )
+    ),
+    mainPanel(
+      plotOutput("time_series_plot")
+    )
+  )
+)
+
+# Define Server
+server <- function(input, output) {
+  # Reactive filtered data for the selected county
+  filtered_data <- reactive({
+    data %>% filter(county == input$selected_county)
+  })
+
+  # Render the time series plot
+  output$time_series_plot <- renderPlot({
+    req(filtered_data())
+
+    plot_data <- filtered_data() %>%
+      arrange(date)  # Ensure data is ordered by date
+
+    ggplot(plot_data, aes(x = date)) +
+      geom_line(aes(y = daily_change_per_100k, color = "Actual Cases", linetype = "Actual Cases"), size = 1) +
+      geom_line(aes(y = predicted_daily_change_per_100k, color = "Predicted Cases", linetype = "Predicted Cases"), size = 1) +
+      scale_color_manual(values = c("Actual Cases" = "blue", "Predicted Cases" = "red")) +
+      scale_linetype_manual(values = c("Actual Cases" = "solid", "Predicted Cases" = "dashed")) +
+      labs(
+        title = paste("Daily Change of Cases in", input$selected_county),
+        x = "Date",
+        y = "Daily Change per 100k",
+        color = "Legend",
+        linetype = "Legend"
+      ) +
+      theme_minimal() +
+      theme(
+        text = element_text(size = 14),
+        legend.position = "bottom"
+      )
+  })
+}
+
+# Run the app
+shinyApp(ui, server)
+
+```
+
+
+
+
